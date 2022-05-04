@@ -9,6 +9,10 @@ import java.util.*;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Хранилище для кэширования в файл
+ * @param <T>
+ */
 public class FileStorage<T> implements Storage {
     private Map<Object[], T> cache = new HashMap<>();
     String fileNamePrefix;

@@ -5,6 +5,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Хранилище кэша в памяти
+ * @param <T>
+ */
 public class JVMStorage<T> implements Storage{
     private Map<Method, HashMap<Object[],T>> cache =  new HashMap();
     String key;
