@@ -17,14 +17,14 @@ public class FileStorage<T> implements Storage {
     private Map<Object[], T> cache = new HashMap<>();
     String fileNamePrefix;
     boolean zip;
-    Class[] identityBy;
+    Object[] args;
     Path storageRootDirectory;
     Path pathToCacheFile;
 
-    public FileStorage(Path storageRootDirectory, String fileNamePrefix, boolean zip, Class[] identityBy) throws IOException, ClassNotFoundException {
+    public FileStorage(Path storageRootDirectory, String fileNamePrefix, boolean zip, Object[] args) throws IOException, ClassNotFoundException {
         this.fileNamePrefix = fileNamePrefix;
         this.zip = zip;
-        this.identityBy = identityBy;
+        this.args = args;
         this.storageRootDirectory = storageRootDirectory;
 
 
@@ -73,39 +73,19 @@ public class FileStorage<T> implements Storage {
         }
         return Paths.get(filePath.toString());
     }
-    /**
-     * Получение параметров, которые учитываются при кэшировании
-     * @param args
-     * @return
-     */
-    private Object[] getParamsForCache(Object[] args){
-        if(identityBy.length == 0) {
-            return args;
-        } else {
-            List<Object> result = new ArrayList<>();
-            for (Object arg: args) {
-                if(Arrays.asList(identityBy).contains(arg.getClass())){
-                    result.add(arg);
-                }
-            }
-            return result.toArray();
-        }
-    }
+
     @Override
     public boolean containsCachedValue(Method method, Object[] parameter) throws IOException {
-        Object[] args = getParamsForCache(parameter);
         return cache.containsKey(args);
     }
 
     @Override
     public Object getCachedValue(Method method, Object[] parameter) {
-        Object[] args = getParamsForCache(parameter);
         return cache.get(args);
     }
 
     @Override
     public void cachValue(Method method, Object[] parameter, Object value) {
-        Object[] args = getParamsForCache(parameter);
         CacheRow cacheRow = new CacheRow(args, value);
         try (ObjectOutputStream oos = getCorrectOutputStream(pathToCacheFile)) {
             oos.writeObject(cacheRow);
