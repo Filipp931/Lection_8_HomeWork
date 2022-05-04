@@ -48,6 +48,7 @@ public class FileStorage<T> implements Storage {
      * @throws ClassNotFoundException
      */
     private void readCacheFromFile() throws IOException, ClassNotFoundException {
+        if(Files.size(pathToCacheFile) == 0) return;
         try (ObjectInputStream ois = getCorrectInputStream(pathToCacheFile)) {
             while (true) {
                 try {
@@ -99,17 +100,12 @@ public class FileStorage<T> implements Storage {
             if (Files.exists(pathToCacheFile)) {
                 try {
                     Files.delete(pathToCacheFile);
+                    Files.createFile(pathToCacheFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            ZipFile zipFile = null;
-            try {
-                zipFile = new ZipFile(pathToCacheFile.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            ZipEntry entry = zipFile.getEntry(pathToCacheFile.getFileName().toString());
+            ZipEntry entry = new ZipEntry(pathToCacheFile.getFileName().toString().replace(".zip", ""));
             try{
                 ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pathToCacheFile));
                 zos.putNextEntry(entry);
