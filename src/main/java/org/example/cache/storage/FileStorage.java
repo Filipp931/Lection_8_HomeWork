@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -87,10 +89,35 @@ public class FileStorage<T> implements Storage {
     @Override
     public void cachValue(Method method, Object[] parameter, Object value) {
         CacheRow cacheRow = new CacheRow(args, value);
-        try (ObjectOutputStream oos = getCorrectOutputStream(pathToCacheFile)) {
-            oos.writeObject(cacheRow);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(!zip){
+            try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(pathToCacheFile));) {
+                oos.writeObject(cacheRow);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            if (Files.exists(pathToCacheFile)) {
+                try {
+                    Files.delete(pathToCacheFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            ZipFile zipFile = null;
+            try {
+                zipFile = new ZipFile(pathToCacheFile.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ZipEntry entry = zipFile.getEntry(pathToCacheFile.getFileName().toString());
+            try{
+                ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pathToCacheFile));
+                zos.putNextEntry(entry);
+                ObjectOutputStream ous = new ObjectOutputStream(zos);
+                ous.writeObject(cacheRow);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         cache.put(args, (T) value); //TODO
     }
@@ -100,19 +127,6 @@ public class FileStorage<T> implements Storage {
         Files.createFile(path);
     }
 
-    /**
-     * открытие потока для записи
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    private ObjectOutputStream getCorrectOutputStream(Path path) throws IOException {
-        if(zip){
-            return new ObjectOutputStream(new ZipOutputStream(Files.newOutputStream(path)));
-        } else {
-            return new ObjectOutputStream(Files.newOutputStream(path));
-        }
-    }
 
     /**
      * получание потока для чтения
@@ -123,7 +137,9 @@ public class FileStorage<T> implements Storage {
     private ObjectInputStream getCorrectInputStream(Path path) throws IOException {
         if(Files.size(path) == 0) return null;
         if(zip){
-            return new ObjectInputStream(new ZipInputStream(Files.newInputStream(path)));
+            ZipFile zipFile = new ZipFile(path.toString());
+            ZipEntry entry = zipFile.getEntry(path.getFileName().toString());
+            return new ObjectInputStream(zipFile.getInputStream(entry));
         } else {
             return new ObjectInputStream(Files.newInputStream(path));
         }
