@@ -44,9 +44,9 @@ public class AppTest
     @Test
     public void FileStorageWriteZipFileTest() throws IOException, ClassNotFoundException {
         CacheProxy cacheProxy = new CacheProxy(Paths.get("test"));
-        Service service = (Service) cacheProxy.cache(new ServiceImpl());
+        Service service = (Service) cacheProxy.cache(new ServiceImpl()); //!!!!!!!!!!
         System.out.println("||||||");
-        service.run("testItem", 12, new Date());
+        service.run("testItem", 12, new Date()); //Exception
     }
 
 
