@@ -4,42 +4,47 @@ import org.example.cache.storage.FileStorage;
 import org.example.cache.storage.JVMStorage;
 import org.example.cache.storage.Storage;
 
-import java.lang.annotation.Annotation;
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CacheHandler<T> implements InvocationHandler {
     private final T delegate;
     private CacheProperties cacheProperties;
     private Path storageRootDirectory;
+    Map<Method, Storage> storageMap;
 
 
-    private Storage storage;
     public CacheHandler(T delegate, Path storageRootDirectory) {
         this.delegate = delegate;
         this.storageRootDirectory = storageRootDirectory;
+        this.storageMap = new HashMap<>();
     }
+
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Object result = null;
-        if(method.isAnnotationPresent(Cache.class)){
+        Storage storage;
+        if (method.isAnnotationPresent(Cache.class)) {
             cacheProperties = getCachePropertiesFromAnnotation(method);
-            //получить параметры из кэша иначе вызвать метод TODO
-            if(Strorage. contains(method, args)){
-                return  = Strorage.get(method, args);
+            //получения хранилища для метода, либо создание нового в соответствии с параметрами аннотации
+            storage = storageMap.containsKey(method) ?
+                    storageMap.get(method) : storageMap.put(method, setStorage(method));
+            //либо получение значения из кэша, либо вычисление и кэширование
+            if (storage.containsCachedValue(method, args)) {
+                return storage.getCachedValue(method, args);
             } else {
-                res = method.invoke(proxy, args);
-
+                Object result = method.invoke(proxy, args);
+                storage.cachValue(method, args, result);
+                return result;
             }
-
-
-            setCacheType(method);
-        } else {
-            method.invoke(proxy, args);
         }
-    return
+        //если метод не аннотирован кэшем, то просто вычисление значения
+        return method.invoke(proxy, args);
     }
 
     /**
@@ -48,22 +53,26 @@ public class CacheHandler<T> implements InvocationHandler {
      * @return CacheProperties
      */
     private CacheProperties getCachePropertiesFromAnnotation(Method method){
-        Cache cache = method.getDeclaredAnnotation(Cache.class);
-        return new CacheProperties(cache.cacheType(),cache.fileNamePrefix(),
-                cache.zip(), cache.identityBy(), cache.listMaxCacheCount(), cache.key());
+        Cache cache = method.getAnnotation(Cache.class);
+        String cacheType = cache.cacheType();
+        String fileNamePrefix = cache.fileNamePrefix().equals("") ? method.getName() : cache.fileNamePrefix();
+        String key = cache.key().equals("") ? method.getName() : cache.key();
+        Class[] identityBy = Arrays.asList(cache.identityBy()).isEmpty() ? method.getParameterTypes() : null;
+        return new CacheProperties(cacheType,fileNamePrefix, cache.zip(), identityBy,
+                cache.listMaxCacheCount(), key);
     }
 
     /**
      * Установка типа кэша в зависимости от параметров аннотации
      * @param method
      */
-    private void setCacheType(Method method){
+    private Storage setStorage(Method method) throws IOException, ClassNotFoundException {
         if(cacheProperties.getCacheType().equals(CacheProperties.CACHE_TYPE_INFILE)){
-            String fileNamePrefix = cacheProperties.getFileNamePrefix().equals("") ? method.getName() : cacheProperties.getFileNamePrefix();
-            String key = cacheProperties.getKey().equals("") ? method.getName() : cacheProperties.getKey();
-            storage = new FileStorage(fileNamePrefix, cacheProperties.getZip(), key, cacheProperties.getIdentityBy());
+            return new FileStorage(storageRootDirectory, cacheProperties.getFileNamePrefix(), cacheProperties.getZip(),
+                    cacheProperties.getIdentityBy());
         } else {
-            storage = new JVMStorage(cacheProperties.get);
+            return new JVMStorage(cacheProperties.getKey(),
+                                  cacheProperties.getIdentityBy());
         }
     }
 

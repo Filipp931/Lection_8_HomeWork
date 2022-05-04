@@ -7,6 +7,14 @@ import java.util.Map;
 
 public class JVMStorage<T> implements Storage{
     private Map<Method, HashMap<Object[],T>> cache =  new HashMap();
+    String key;
+    Class[] identityBy;
+
+    public JVMStorage(String key, Class[] identityBy) {
+        this.key = key;
+        this.identityBy = identityBy;
+    }
+
     /**
      * Проверка наличия кэшированного значения для метода method(parameter)
      * @param method

@@ -1,5 +1,6 @@
 package org.example.cache.storage;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 public interface Storage<T> {
@@ -9,7 +10,7 @@ public interface Storage<T> {
      * @param parameter
      * @return true - если значение было сохранено ранее
      */
-    boolean containsCachedValue(Method method, Object[] parameter);
+    boolean containsCachedValue(Method method, Object[] parameter) throws IOException;
     /**
      * Получение кэшированного результата выполнения метода method(parameter)
      * @param method
