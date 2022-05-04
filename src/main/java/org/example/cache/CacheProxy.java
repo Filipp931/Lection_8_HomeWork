@@ -19,6 +19,6 @@ public class CacheProxy<T> {
     public T cache(T object){
         return (T) Proxy.newProxyInstance( object.getClass().getClassLoader(),
                 object.getClass().getInterfaces(),
-                new CacheHandler<T>(object, storageRootDirectory));
+                new CacheHandler(object, storageRootDirectory));
     }
 }
