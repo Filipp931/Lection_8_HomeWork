@@ -12,11 +12,11 @@ import java.util.Map;
 public class JVMStorage<T> implements Storage{
     private Map<Method, HashMap<Object[],T>> cache =  new HashMap();
     String key;
-    Class[] identityBy;
+    Object[] args;
 
-    public JVMStorage(String key, Class[] identityBy) {
+    public JVMStorage(String key, Object[] args) {
         this.key = key;
-        this.identityBy = identityBy;
+        this.args = args;
     }
 
     /**
@@ -33,6 +33,7 @@ public class JVMStorage<T> implements Storage{
             if(Arrays.equals(param, parameter))
                 contains = true;
         }
+        System.out.println("JVM Storage contains cache value");
         return contains;
     }
     /**
@@ -47,6 +48,7 @@ public class JVMStorage<T> implements Storage{
         Map<Object[],T> temp = cache.get(method);
         for (Object[] param : temp.keySet()) {
             if(Arrays.equals(param, parameter))
+                System.out.println("Getting cache value from JVM storage");
                 return temp.get(param);
         }
         return null;
@@ -62,6 +64,7 @@ public class JVMStorage<T> implements Storage{
         HashMap<Object[], T> temp = new HashMap<>();
         temp.put(parameter, (T) value);
         cache.put(method, temp);
+        System.out.println("Caching value to JVM storage");
     }
 
 }
