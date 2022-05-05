@@ -1,7 +1,6 @@
 package org.example.cache;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 import java.util.List;
 
 /**
@@ -14,6 +13,8 @@ import java.util.List;
  * int listMaxCacheCount() - Если возвращаемый тип это List – возможность указывать максимальное количество элементов в нем.
  То есть, если нам возвращается List с size = 1млн, мы можем сказать что в кеше достаточно хранить 100т элементов.
  */
+@Retention(value= RetentionPolicy.RUNTIME)
+@Inherited
 @Target(ElementType.METHOD)
 public @interface Cache {
     String cacheType() default CacheProperties.CACHE_TYPE_INMEMORY;

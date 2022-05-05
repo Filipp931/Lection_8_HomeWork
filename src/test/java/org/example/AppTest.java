@@ -2,6 +2,7 @@ package org.example;
 
 import static org.junit.Assert.assertTrue;
 
+import org.example.cache.CacheHandler;
 import org.example.cache.CacheProxy;
 import org.example.cache.service.Service;
 import org.example.cache.service.serviceImpl.ServiceImpl;
@@ -11,6 +12,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,19 +53,30 @@ public class AppTest
         ServiceImpl service = new ServiceImpl();
         Method method = service.getClass().getDeclaredMethod("run", String.class, double.class, Date.class);
         fileStorage.cachValue(method, new Object[]{"test"}, "TEST");
-
         assertTrue(Files.size(Paths.get("C:\\Users\\Fil\\Desktop\\JavaSber\\testZip.zip")) != 0);
     }
 
-/*
     @Test
-    public void FileStorageWriteZipFileTest() throws IOException, ClassNotFoundException {
+    public void CacheHandlerTestByHands() throws IOException, ClassNotFoundException, NoSuchMethodException {
+        Service serviceImpl = new ServiceImpl();
+        Service service = (Service) Proxy.newProxyInstance(serviceImpl.getClass().getClassLoader(),
+                serviceImpl.getClass().getInterfaces(),
+                new CacheHandler(serviceImpl, Paths.get("C:\\Users\\Fil\\Desktop\\JavaSber")));
+        System.out.println(service.run("TestString", 123, new Date(System.currentTimeMillis())).size());
+        System.out.println(service.run("TestString", 123, new Date(System.currentTimeMillis())).size());
+        System.out.println(service.run("TestString1", 3, new Date(System.currentTimeMillis())).size());
+        service.run("TestString2", 5, new Date(System.currentTimeMillis()));
+    }
+
+
+    @Test
+    public void FileStorageWriteZipFileTest1() throws IOException, ClassNotFoundException {
         CacheProxy cacheProxy = new CacheProxy(Paths.get("test"));
         Service service = (Service) cacheProxy.cache(new ServiceImpl()); //!!!!!!!!!!
         System.out.println("||||||");
-        service.run("testItem", 12, new Date()); //Exception
+        service.run("testItem", 12, new Date(System.currentTimeMillis())); //Exception
     }
-*/
+
 
 
 }

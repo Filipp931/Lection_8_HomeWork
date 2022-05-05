@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -28,8 +29,6 @@ public class FileStorage<T> implements Storage {
         this.zip = zip;
         this.args = args;
         this.storageRootDirectory = storageRootDirectory;
-
-
         //автоматическое создание пути к файлу
         pathToCacheFile = getPathToFile();
         //проверка файла на существование
@@ -49,17 +48,23 @@ public class FileStorage<T> implements Storage {
      */
     private void readCacheFromFile() throws IOException, ClassNotFoundException {
         if(Files.size(pathToCacheFile) == 0) return;
-        try (ObjectInputStream ois = getCorrectInputStream(pathToCacheFile)) {
-            while (true) {
-                try {
-                    if(ois == null) break;
-                    CacheRow cacheRow = (CacheRow) ois.readObject();
-                    cache.put(cacheRow.getArgs(), (T) cacheRow.getValue());
-                } catch (EOFException e) {
-                    break;
+        if(zip){
+            try (ZipFile zipFile = new ZipFile(pathToCacheFile.toString());
+                 ObjectInputStream ois = new ObjectInputStream(zipFile.getInputStream(zipFile.getEntry(pathToCacheFile.getFileName().toString().replace(".zip", ""))))) {
+                while (true) {
+                    try {
+                        if(ois == null) break;
+                        CacheRow cacheRow = new CacheRow();
+                        cacheRow.readExternal(ois);
+                        cache.put(cacheRow.getArgs(), (T) cacheRow.getValue());
+                    } catch (EOFException e) {
+                        System.out.println("Successfully read cache from file");
+                        break;
+                    }
                 }
             }
         }
+
     }
 
     /**
@@ -79,7 +84,14 @@ public class FileStorage<T> implements Storage {
 
     @Override
     public boolean containsCachedValue(Method method, Object[] parameter) throws IOException {
-        return cache.containsKey(args);
+        /*cache.keySet().stream().filter(args -> Arrays.equals(args, parameter)).collect(Collectors.toList());*/
+        for (Object[] variable: cache.keySet()
+             ) {
+            if(Arrays.equals(variable, parameter)){
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -110,7 +122,10 @@ public class FileStorage<T> implements Storage {
                 ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pathToCacheFile));
                 zos.putNextEntry(entry);
                 ObjectOutputStream ous = new ObjectOutputStream(zos);
-                ous.writeObject(cacheRow);
+                cacheRow.writeExternal(ous);
+                zos.closeEntry();
+                zos.close();
+                System.out.println("Successfully cached to zip file");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -134,7 +149,7 @@ public class FileStorage<T> implements Storage {
         if(Files.size(path) == 0) return null;
         if(zip){
             ZipFile zipFile = new ZipFile(path.toString());
-            ZipEntry entry = zipFile.getEntry(path.getFileName().toString());
+            ZipEntry entry = zipFile.getEntry(path.getFileName().toString().replace(".zip", ""));
             return new ObjectInputStream(zipFile.getInputStream(entry));
         } else {
             return new ObjectInputStream(Files.newInputStream(path));

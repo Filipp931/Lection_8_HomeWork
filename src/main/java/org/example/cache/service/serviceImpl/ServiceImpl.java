@@ -13,6 +13,6 @@ public class ServiceImpl implements Service {
         for (int i = 0; i < value; i++) {
             result.add(item+"|"+value+"|"+date.toString());
         }
-        return new ArrayList<>();
+        return result;
     }
 }

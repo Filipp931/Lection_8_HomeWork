@@ -32,20 +32,28 @@ public class CacheHandler<T> implements InvocationHandler {
             cacheProperties = getCachePropertiesFromAnnotation(method);
             argsForCache = getParamsForCache(args);
             //получения хранилища для метода, либо создание нового в соответствии с параметрами аннотации
-            storage = storageMap.containsKey(method) ?
-                    storageMap.get(method) : storageMap.put(method, setStorage(method));
-            //либо получение значения из кэша, либо вычисление и кэширование
-            if (storage.containsCachedValue(method, args)) {
-                return storage.getCachedValue(method, args);
+            if (storageMap.containsKey(method)) {
+                storage = storageMap.get(method);
             } else {
-                Object result = method.invoke(proxy, args);
-                storage.cachValue(method, args, result);
+                storageMap.put(method, setStorage(method));
+                storage = storageMap.get(method);
+            }
+
+            //либо получение значения из кэша, либо вычисление и кэширование
+            if (storage.containsCachedValue(method, argsForCache)) {
+                System.out.println("Getting value from cache");
+                return storage.getCachedValue(method, argsForCache);
+
+            } else {
+                Object result = method.invoke(delegate, args);
+                storage.cachValue(method, argsForCache, result);
                 return result;
             }
         }
         //если метод не аннотирован кэшем, то просто вычисление значения
-        return method.invoke(proxy, args);
+        return method.invoke(delegate, args);
     }
+
     /**
      * Получение параметров, которые учитываются при кэшировании
      * @param args
@@ -74,7 +82,7 @@ public class CacheHandler<T> implements InvocationHandler {
         String cacheType = cache.cacheType();
         String fileNamePrefix = cache.fileNamePrefix().equals("") ? method.getName() : cache.fileNamePrefix();
         String key = cache.key().equals("") ? method.getName() : cache.key();
-        Class[] identityBy = Arrays.asList(cache.identityBy()).isEmpty() ? method.getParameterTypes() : null;
+        Class[] identityBy = Arrays.asList(cache.identityBy()).isEmpty() ? method.getParameterTypes() : cache.identityBy();
         return new CacheProperties(cacheType,fileNamePrefix, cache.zip(), identityBy,
                 cache.listMaxCacheCount(), key);
     }
@@ -83,15 +91,18 @@ public class CacheHandler<T> implements InvocationHandler {
 
     /**
      * Установка типа кэша в зависимости от параметров аннотации
-     * @param method
      */
     private Storage setStorage(Method method) throws IOException, ClassNotFoundException {
         if(cacheProperties.getCacheType().equals(CacheProperties.CACHE_TYPE_INFILE)){
-            return new FileStorage(storageRootDirectory, cacheProperties.getFileNamePrefix(), cacheProperties.getZip(),
+            Storage fileStorage = new FileStorage(storageRootDirectory, cacheProperties.getFileNamePrefix(), cacheProperties.getZip(),
                     argsForCache);
+            storageMap.put(method, fileStorage);
+            return fileStorage;
         } else {
-            return new JVMStorage(cacheProperties.getKey(),
-                                  cacheProperties.getIdentityBy());
+            Storage JVMStorage = new JVMStorage(cacheProperties.getKey(),
+                    cacheProperties.getIdentityBy());
+            storageMap.put(method, JVMStorage);
+            return JVMStorage;
         }
     }
 
