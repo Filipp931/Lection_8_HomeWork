@@ -14,10 +14,9 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * Хранилище для кэширования в файл
- * @param <T>
  */
-public class FileStorage<T> implements Storage {
-    private Map<Object[], T> cache = new HashMap<>();
+public class FileStorage implements Storage {
+    private Map<Object[], Object> cache = new HashMap<>();;
     String fileNamePrefix;
     boolean zip;
     Object[] args;
@@ -51,17 +50,8 @@ public class FileStorage<T> implements Storage {
         if(zip){
             try (ZipFile zipFile = new ZipFile(pathToCacheFile.toString());
                  ObjectInputStream ois = new ObjectInputStream(zipFile.getInputStream(zipFile.getEntry(pathToCacheFile.getFileName().toString().replace(".zip", ""))))) {
-                while (true) {
-                    try {
-                        if(ois == null) break;
-                        CacheRow cacheRow = new CacheRow();
-                        cacheRow.readExternal(ois);
-                        cache.put(cacheRow.getArgs(), (T) cacheRow.getValue());
-                    } catch (EOFException e) {
-                        System.out.println("Successfully read cache from file");
-                        break;
-                    }
-                }
+                if(ois == null) ;
+                cache.putAll((Map<? extends Object[], ?>) ois.readObject());
             }
         }
 
@@ -96,15 +86,21 @@ public class FileStorage<T> implements Storage {
 
     @Override
     public Object getCachedValue(Method method, Object[] parameter) {
-        return cache.get(args);
+        for (Map.Entry entry: cache.entrySet()
+        ) {
+            if (Arrays.equals((Object[]) entry.getKey(), parameter)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     @Override
     public void cachValue(Method method, Object[] parameter, Object value) {
-        CacheRow cacheRow = new CacheRow(args, value);
+        cache.put(parameter, value);
         if(!zip){
             try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(pathToCacheFile));) {
-                oos.writeObject(cacheRow);
+                oos.writeObject(cache);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -122,7 +118,7 @@ public class FileStorage<T> implements Storage {
                 ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pathToCacheFile));
                 zos.putNextEntry(entry);
                 ObjectOutputStream ous = new ObjectOutputStream(zos);
-                cacheRow.writeExternal(ous);
+                ous.writeObject(cache);
                 zos.closeEntry();
                 zos.close();
                 System.out.println("Successfully cached to zip file");
@@ -130,7 +126,6 @@ public class FileStorage<T> implements Storage {
                 e.printStackTrace();
             }
         }
-        cache.put(args, (T) value); //TODO
     }
 
 
