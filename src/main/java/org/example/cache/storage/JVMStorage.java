@@ -10,7 +10,7 @@ import java.util.Map;
  * @param <T>
  */
 public class JVMStorage<T> implements Storage{
-    private Map<Method, HashMap<Object[],T>> cache =  new HashMap();
+    private final Map<Method, HashMap<Object[],T>> cache =  new HashMap();
     String key;
     Object[] args;
 
@@ -21,8 +21,6 @@ public class JVMStorage<T> implements Storage{
 
     /**
      * Проверка наличия кэшированного значения для метода method(parameter)
-     * @param method
-     * @param parameter
      * @return true - если значение было сохранено ранее
      */
     @Override
@@ -30,21 +28,19 @@ public class JVMStorage<T> implements Storage{
         Boolean contains = false;
         if(!cache.containsKey(method)) return false;
         for (Object[] param : cache.get(method).keySet()) {
-            if(Arrays.equals(param, parameter))
+            if(Arrays.equals(param, parameter)){
                 contains = true;
+                System.out.println("JVM Storage contains cache value");
+            }
         }
-        System.out.println("JVM Storage contains cache value");
         return contains;
     }
     /**
      * Получение кэшированного результата выполнения метода method(parameter)
-     * @param method
-     * @param parameter
      * @return значение метода method(parameter) из кэша
      */
     @Override
     public Object getCachedValue(Method method, Object[] parameter) {
-        if(!containsCachedValue(method,parameter)) return null;
         Map<Object[],T> temp = cache.get(method);
         for (Object[] param : temp.keySet()) {
             if(Arrays.equals(param, parameter))
@@ -55,15 +51,16 @@ public class JVMStorage<T> implements Storage{
     }
     /**
      * Кэширование результирующего значения метода value = method(parameter)
-     * @param method
-     * @param parameter
-     * @param value
      */
     @Override
     public void cachValue(Method method, Object[] parameter, Object value) {
-        HashMap<Object[], T> temp = new HashMap<>();
-        temp.put(parameter, (T) value);
-        cache.put(method, temp);
+        if(cache.containsKey(method)){
+            cache.get(method).put(parameter, (T) value);
+        } else {
+            HashMap<Object[], T> temp = new HashMap<>();
+            temp.put(parameter, (T) value);
+            cache.put(method, temp);
+        }
         System.out.println("Caching value to JVM storage");
     }
 

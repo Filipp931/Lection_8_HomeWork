@@ -1,10 +1,11 @@
 package org.example.cache;
 
-import javax.sql.rowset.Predicate;
+import org.example.cache.service.Service;
+
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 
-public class CacheProxy<T> {
+public class CacheProxy {
     private Path storageRootDirectory;
 
     public CacheProxy(Path storageRootDirectory) {
@@ -16,8 +17,8 @@ public class CacheProxy<T> {
      * @param object
      * @return
      */
-    public T cache(T object){
-        return (T) Proxy.newProxyInstance( object.getClass().getClassLoader(),
+    public Service cache(Service object){
+        return (Service) Proxy.newProxyInstance( object.getClass().getClassLoader(),
                 object.getClass().getInterfaces(),
                 new CacheHandler(object, storageRootDirectory));
     }

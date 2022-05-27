@@ -1,7 +1,9 @@
 package org.example.cache;
 
-import java.lang.annotation.*;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Аннотация для кэширования
@@ -14,7 +16,6 @@ import java.util.List;
  То есть, если нам возвращается List с size = 1млн, мы можем сказать что в кеше достаточно хранить 100т элементов.
  */
 @Retention(value= RetentionPolicy.RUNTIME)
-@Inherited
 @Target(ElementType.METHOD)
 public @interface Cache {
     String cacheType() default CacheProperties.CACHE_TYPE_INMEMORY;

@@ -43,10 +43,9 @@ public class CacheHandler<T> implements InvocationHandler {
             if (storage.containsCachedValue(method, argsForCache)) {
                 System.out.println("Getting value from cache");
                 return storage.getCachedValue(method, argsForCache);
-
             } else {
                 Object result = method.invoke(delegate, args);
-                storage.cachValue(method, argsForCache, result);
+                storage.cachValue(method, argsForCache,  trimResult(result));
                 return result;
             }
         }
@@ -55,9 +54,15 @@ public class CacheHandler<T> implements InvocationHandler {
     }
 
     /**
+     * Обрезка списка
+     */
+    private Object trimResult(Object result) {
+        if (Arrays.asList(result.getClass().getInterfaces()).contains(List.class)) {
+            return new ArrayList<>(((List) result).subList(0, cacheProperties.getListMaxCacheCount()));
+        } else return result;
+    }
+    /**
      * Получение параметров, которые учитываются при кэшировании
-     * @param args
-     * @return
      */
     private Object[] getParamsForCache(Object[] args){
         if(cacheProperties.getIdentityBy().length == 0) {
@@ -86,7 +91,6 @@ public class CacheHandler<T> implements InvocationHandler {
         return new CacheProperties(cacheType,fileNamePrefix, cache.zip(), identityBy,
                 cache.listMaxCacheCount(), key);
     }
-
 
 
     /**
