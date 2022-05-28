@@ -6,24 +6,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
  * Хранилище для кэширования в файл
  */
 public class FileStorage implements Storage {
-    private Map<Object[], Object> cache = new HashMap<>();;
+    private final Map<Object[], Object> cache = new HashMap<>();
     String fileNamePrefix;
     boolean zip;
     Object[] args;
     Path storageRootDirectory;
     Path pathToCacheFile;
 
-    public FileStorage(Path storageRootDirectory, String fileNamePrefix, boolean zip, Object[] args) throws IOException, ClassNotFoundException {
+    public FileStorage(Path storageRootDirectory, String fileNamePrefix, boolean zip, Object[] args) throws IOException {
         this.fileNamePrefix = fileNamePrefix;
         this.zip = zip;
         this.args = args;
@@ -36,14 +34,10 @@ public class FileStorage implements Storage {
         } else {
             createCacheFile(pathToCacheFile); //создание пустого файла
         }
-
-
     }
 
     /**
      * Считывание кэша из файла(только при инициализации)
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
     private void readCacheFromFile(){
         try {
@@ -51,7 +45,6 @@ public class FileStorage implements Storage {
             if(zip){
                 try (ZipFile zipFile = new ZipFile(pathToCacheFile.toString());
                      ObjectInputStream ois = new ObjectInputStream(zipFile.getInputStream(zipFile.getEntry(pathToCacheFile.getFileName().toString().replace(".zip", ""))))) {
-                    if(ois == null);
                     cache.putAll((Map<? extends Object[], ?>) ois.readObject());
                 }
             }
@@ -69,7 +62,6 @@ public class FileStorage implements Storage {
 
     /**
      * генерирование пути к файлу с кэшем
-     * @return
      */
     private Path getPathToFile(){
         StringBuilder filePath = new StringBuilder();
@@ -83,8 +75,7 @@ public class FileStorage implements Storage {
     }
 
     @Override
-    public boolean containsCachedValue(Method method, Object[] parameter) throws IOException {
-        /*cache.keySet().stream().filter(args -> Arrays.equals(args, parameter)).collect(Collectors.toList());*/
+    public boolean containsCachedValue(Method method, Object[] parameter){
         for (Object[] variable: cache.keySet()
              ) {
             if(Arrays.equals(variable, parameter)){
@@ -109,7 +100,7 @@ public class FileStorage implements Storage {
     public void cachValue(Method method, Object[] parameter, Object value) {
         cache.put(parameter, value);
         if(!zip){
-            try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(pathToCacheFile));) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(pathToCacheFile))) {
                 oos.writeObject(cache);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -131,7 +122,7 @@ public class FileStorage implements Storage {
                 ous.writeObject(cache);
                 zos.closeEntry();
                 zos.close();
-                System.out.println("Successfully cached to zip file");
+                System.out.println(Thread.currentThread().getName() +  " - Successfully cached to zip file");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -144,21 +135,4 @@ public class FileStorage implements Storage {
         Files.createFile(path);
     }
 
-
-    /**
-     * получание потока для чтения
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    private ObjectInputStream getCorrectInputStream(Path path) throws IOException {
-        if(Files.size(path) == 0) return null;
-        if(zip){
-            ZipFile zipFile = new ZipFile(path.toString());
-            ZipEntry entry = zipFile.getEntry(path.getFileName().toString().replace(".zip", ""));
-            return new ObjectInputStream(zipFile.getInputStream(entry));
-        } else {
-            return new ObjectInputStream(Files.newInputStream(path));
-        }
-    }
 }

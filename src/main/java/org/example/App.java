@@ -1,5 +1,14 @@
 package org.example;
 
+import org.example.cache.CacheProxy;
+import org.example.cache.service.Service;
+import org.example.cache.service.serviceImpl.ServiceImpl;
+
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Hello world!
  *
@@ -8,6 +17,16 @@ public class App
 {
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
+        CacheProxy cacheProxy = new CacheProxy(Paths.get("test"));
+        Service service =  cacheProxy.cache(new ServiceImpl());
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        Runnable runnableTask = () -> {
+            System.out.printf(Thread.currentThread().getName()+ service.run("work", 11.3, new Date()));
+            System.out.printf(Thread.currentThread().getName()+ service.run("work", 11.3, new Date()));
+            System.out.printf(Thread.currentThread().getName()+ service.run("test", 18.1, new Date()));
+            System.out.printf(Thread.currentThread().getName()+ service.run("test", 18.1, new Date()));
+        };
+        executor.execute(runnableTask);
+
     }
 }

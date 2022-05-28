@@ -30,7 +30,7 @@ public class JVMStorage<T> implements Storage{
         for (Object[] param : cache.get(method).keySet()) {
             if(Arrays.equals(param, parameter)){
                 contains = true;
-                System.out.println("JVM Storage contains cache value");
+                System.out.println(Thread.currentThread().getName() + " - JVM Storage contains cache value");
             }
         }
         return contains;
@@ -44,7 +44,7 @@ public class JVMStorage<T> implements Storage{
         Map<Object[],T> temp = cache.get(method);
         for (Object[] param : temp.keySet()) {
             if(Arrays.equals(param, parameter))
-                System.out.println("Getting cache value from JVM storage");
+                System.out.println(Thread.currentThread().getName() +  " - Getting cache value from JVM storage");
                 return temp.get(param);
         }
         return null;
@@ -61,7 +61,7 @@ public class JVMStorage<T> implements Storage{
             temp.put(parameter, (T) value);
             cache.put(method, temp);
         }
-        System.out.println("Caching value to JVM storage");
+        System.out.println(Thread.currentThread().getName() +  " - Caching value to JVM storage");
     }
 
 }

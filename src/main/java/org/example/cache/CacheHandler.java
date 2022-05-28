@@ -41,7 +41,7 @@ public class CacheHandler<T> implements InvocationHandler {
 
             //либо получение значения из кэша, либо вычисление и кэширование
             if (storage.containsCachedValue(method, argsForCache)) {
-                System.out.println("Getting value from cache");
+                System.out.println(Thread.currentThread().getName() + " Getting value from cache");
                 return storage.getCachedValue(method, argsForCache);
             } else {
                 Object result = method.invoke(delegate, args);

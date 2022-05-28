@@ -16,6 +16,4 @@ public interface Service {
 
     @Cache()
     List<String> work(String item);
-
-
 }

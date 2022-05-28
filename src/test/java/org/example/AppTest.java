@@ -8,6 +8,8 @@ import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Unit test for simple App.
@@ -42,5 +44,6 @@ public class AppTest
         System.out.println(service.run("test", 11.3, new Date()));
         System.out.println(service.run("test", 11.3, new Date()));
     }
+
 }
 
