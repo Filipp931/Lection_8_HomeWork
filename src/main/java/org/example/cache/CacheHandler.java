@@ -9,19 +9,19 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CacheHandler<T> implements InvocationHandler {
     private final T delegate;
     private CacheProperties cacheProperties;
-    private Path storageRootDirectory;
+    private final Path storageRootDirectory;
     private Object[] argsForCache;
-    Map<Method, Storage> storageMap;
+    private final Map<Method, Storage> storageMap = new ConcurrentHashMap<>();
 
 
     public CacheHandler(T delegate, Path storageRootDirectory) {
         this.delegate = delegate;
         this.storageRootDirectory = storageRootDirectory;
-        this.storageMap = new HashMap<>();
     }
 
 
@@ -40,12 +40,12 @@ public class CacheHandler<T> implements InvocationHandler {
             }
 
             //либо получение значения из кэша, либо вычисление и кэширование
-            if (storage.containsCachedValue(method, argsForCache)) {
+            if (storage.containsCachedValue(argsForCache)) {
                 System.out.println(Thread.currentThread().getName() + " Getting value from cache");
-                return storage.getCachedValue(method, argsForCache);
+                return storage.getCachedValue(argsForCache);
             } else {
                 Object result = method.invoke(delegate, args);
-                storage.cachValue(method, argsForCache,  trimResult(result));
+                storage.cachValue(argsForCache,  trimResult(result));
                 return result;
             }
         }
@@ -79,15 +79,13 @@ public class CacheHandler<T> implements InvocationHandler {
     }
     /**
      * получение параметров кэширования из аннотации метода
-     * @param method
-     * @return CacheProperties
      */
     private CacheProperties getCachePropertiesFromAnnotation(Method method){
         Cache cache = method.getAnnotation(Cache.class);
         String cacheType = cache.cacheType();
         String fileNamePrefix = cache.fileNamePrefix().equals("") ? method.getName() : cache.fileNamePrefix();
         String key = cache.key().equals("") ? method.getName() : cache.key();
-        Class[] identityBy = Arrays.asList(cache.identityBy()).isEmpty() ? method.getParameterTypes() : cache.identityBy();
+        Class<?>[] identityBy = Arrays.asList(cache.identityBy()).isEmpty() ? method.getParameterTypes() : cache.identityBy();
         return new CacheProperties(cacheType,fileNamePrefix, cache.zip(), identityBy,
                 cache.listMaxCacheCount(), key);
     }
@@ -96,7 +94,7 @@ public class CacheHandler<T> implements InvocationHandler {
     /**
      * Установка типа кэша в зависимости от параметров аннотации
      */
-    private Storage setStorage(Method method) throws IOException, ClassNotFoundException {
+    private Storage<?> setStorage(Method method) throws IOException{
         if(cacheProperties.getCacheType().equals(CacheProperties.CACHE_TYPE_INFILE)){
             Storage fileStorage = new FileStorage(storageRootDirectory, cacheProperties.getFileNamePrefix(), cacheProperties.getZip(),
                     argsForCache);

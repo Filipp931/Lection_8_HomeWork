@@ -1,6 +1,5 @@
 package org.example.cache.storage;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,8 +8,8 @@ import java.util.Map;
  * Хранилище кэша в памяти
  * @param <T>
  */
-public class JVMStorage<T> implements Storage{
-    private final Map<Method, HashMap<Object[],T>> cache =  new HashMap();
+public class JVMStorage<T> implements Storage<T>{
+    private final Map<Object[],T> cache =  new HashMap();
     String key;
     Object[] args;
 
@@ -24,10 +23,9 @@ public class JVMStorage<T> implements Storage{
      * @return true - если значение было сохранено ранее
      */
     @Override
-    public boolean containsCachedValue(Method method, Object[] parameter) {
-        Boolean contains = false;
-        if(!cache.containsKey(method)) return false;
-        for (Object[] param : cache.get(method).keySet()) {
+    public boolean containsCachedValue(Object[] parameter) {
+        boolean contains = false;
+        for (Object[] param : cache.keySet()) {
             if(Arrays.equals(param, parameter)){
                 contains = true;
                 System.out.println(Thread.currentThread().getName() + " - JVM Storage contains cache value");
@@ -40,12 +38,11 @@ public class JVMStorage<T> implements Storage{
      * @return значение метода method(parameter) из кэша
      */
     @Override
-    public Object getCachedValue(Method method, Object[] parameter) {
-        Map<Object[],T> temp = cache.get(method);
-        for (Object[] param : temp.keySet()) {
+    public T getCachedValue(Object[] parameter) {
+        for (Object[] param : cache.keySet()) {
             if(Arrays.equals(param, parameter))
                 System.out.println(Thread.currentThread().getName() +  " - Getting cache value from JVM storage");
-                return temp.get(param);
+                return cache.get(param);
         }
         return null;
     }
@@ -53,14 +50,8 @@ public class JVMStorage<T> implements Storage{
      * Кэширование результирующего значения метода value = method(parameter)
      */
     @Override
-    public void cachValue(Method method, Object[] parameter, Object value) {
-        if(cache.containsKey(method)){
-            cache.get(method).put(parameter, (T) value);
-        } else {
-            HashMap<Object[], T> temp = new HashMap<>();
-            temp.put(parameter, (T) value);
-            cache.put(method, temp);
-        }
+    public void cachValue(Object[] parameter, T value) {
+        cache.put(parameter, value);
         System.out.println(Thread.currentThread().getName() +  " - Caching value to JVM storage");
     }
 

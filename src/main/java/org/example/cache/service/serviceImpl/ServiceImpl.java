@@ -5,6 +5,7 @@ import org.example.cache.service.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class ServiceImpl implements Service {
     /**
@@ -18,6 +19,11 @@ public class ServiceImpl implements Service {
         for (int i = 0; i < value; i++) {
             result.add(String.format("|%s %d|", item, i));
         }
+        try {
+            Thread.sleep(new Random().nextInt(400));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return result;
     }
 
@@ -29,6 +35,11 @@ public class ServiceImpl implements Service {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             result.add(String.format("|%s %d|", item, i));
+        }
+        try {
+            Thread.sleep(new Random().nextInt(400));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         return result ;
     }

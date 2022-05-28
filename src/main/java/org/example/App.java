@@ -21,12 +21,13 @@ public class App
         Service service =  cacheProxy.cache(new ServiceImpl());
         ExecutorService executor = Executors.newFixedThreadPool(5);
         Runnable runnableTask = () -> {
-            System.out.printf(Thread.currentThread().getName()+ service.run("work", 11.3, new Date()));
-            System.out.printf(Thread.currentThread().getName()+ service.run("work", 11.3, new Date()));
-            System.out.printf(Thread.currentThread().getName()+ service.run("test", 18.1, new Date()));
-            System.out.printf(Thread.currentThread().getName()+ service.run("test", 18.1, new Date()));
+            System.out.printf(Thread.currentThread().getName()+ service.work("work"));
+            System.out.printf(Thread.currentThread().getName()+ service.work("work"));
+            System.out.printf(Thread.currentThread().getName()+ service.work("work"));
+            System.out.printf(Thread.currentThread().getName()+ service.work("work"));
         };
-        executor.execute(runnableTask);
-
+        for (int i = 0; i < 5; i++) {
+            executor.execute(runnableTask);
+        }
     }
 }

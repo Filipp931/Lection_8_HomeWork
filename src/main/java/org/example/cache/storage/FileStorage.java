@@ -1,11 +1,11 @@
 package org.example.cache.storage;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -13,8 +13,8 @@ import java.util.zip.ZipOutputStream;
 /**
  * Хранилище для кэширования в файл
  */
-public class FileStorage implements Storage {
-    private final Map<Object[], Object> cache = new HashMap<>();
+public class FileStorage<T> implements Storage<T> {
+    private final Map<Object[], T> cache = new ConcurrentHashMap<>();
     String fileNamePrefix;
     boolean zip;
     Object[] args;
@@ -45,7 +45,7 @@ public class FileStorage implements Storage {
             if(zip){
                 try (ZipFile zipFile = new ZipFile(pathToCacheFile.toString());
                      ObjectInputStream ois = new ObjectInputStream(zipFile.getInputStream(zipFile.getEntry(pathToCacheFile.getFileName().toString().replace(".zip", ""))))) {
-                    cache.putAll((Map<? extends Object[], ?>) ois.readObject());
+                    cache.putAll((Map<Object[], T>) ois.readObject());
                 }
             }
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class FileStorage implements Storage {
     }
 
     @Override
-    public boolean containsCachedValue(Method method, Object[] parameter){
+    public boolean containsCachedValue(Object[] parameter){
         for (Object[] variable: cache.keySet()
              ) {
             if(Arrays.equals(variable, parameter)){
@@ -86,18 +86,18 @@ public class FileStorage implements Storage {
     }
 
     @Override
-    public Object getCachedValue(Method method, Object[] parameter) {
-        for (Map.Entry entry: cache.entrySet()
+    public T getCachedValue(Object[] parameter) {
+        for (Object[] variable: cache.keySet()
         ) {
-            if (Arrays.equals((Object[]) entry.getKey(), parameter)) {
-                return entry.getValue();
+            if (Arrays.equals( variable, parameter)) {
+                return cache.get(variable);
             }
         }
         return null;
     }
 
     @Override
-    public void cachValue(Method method, Object[] parameter, Object value) {
+    public void cachValue(Object[] parameter, T value) {
         cache.put(parameter, value);
         if(!zip){
             try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(pathToCacheFile))) {
@@ -128,7 +128,6 @@ public class FileStorage implements Storage {
             }
         }
     }
-
 
     private void createCacheFile(Path path) throws IOException {
         Files.createDirectories(path.getParent());
