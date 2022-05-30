@@ -1,15 +1,15 @@
 package org.example.cache.storage;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Хранилище кэша в памяти
  * @param <T>
  */
 public class JVMStorage<T> implements Storage<T>{
-    private final Map<Object[],T> cache =  new HashMap();
+    private final Map<Object[],T> cache =  new ConcurrentHashMap<>();
     String key;
     Object[] args;
 
@@ -28,7 +28,7 @@ public class JVMStorage<T> implements Storage<T>{
         for (Object[] param : cache.keySet()) {
             if(Arrays.equals(param, parameter)){
                 contains = true;
-                System.out.println(Thread.currentThread().getName() + " - JVM Storage contains cache value");
+                System.out.println("\n" + Thread.currentThread().getName() + " - JVM Storage contains cache value\n");
             }
         }
         return contains;
@@ -41,7 +41,7 @@ public class JVMStorage<T> implements Storage<T>{
     public T getCachedValue(Object[] parameter) {
         for (Object[] param : cache.keySet()) {
             if(Arrays.equals(param, parameter))
-                System.out.println(Thread.currentThread().getName() +  " - Getting cache value from JVM storage");
+                System.out.println("\n" + Thread.currentThread().getName() +  " - Getting cache value from JVM storage\n");
                 return cache.get(param);
         }
         return null;
@@ -52,7 +52,7 @@ public class JVMStorage<T> implements Storage<T>{
     @Override
     public void cachValue(Object[] parameter, T value) {
         cache.put(parameter, value);
-        System.out.println(Thread.currentThread().getName() +  " - Caching value to JVM storage");
+        System.out.println("\n" + Thread.currentThread().getName() +  " - Caching value to JVM storage\n");
     }
 
 }

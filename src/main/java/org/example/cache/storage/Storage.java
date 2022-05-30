@@ -9,7 +9,7 @@ public interface Storage<T> {
      * @param parameter
      * @return true - если значение было сохранено ранее
      */
-    boolean containsCachedValue(Object[] parameter) throws IOException;
+     boolean containsCachedValue(Object[] parameter) throws IOException;
     /**
      * Получение кэшированного результата выполнения метода method(parameter)
      * @param parameter

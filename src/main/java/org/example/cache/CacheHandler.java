@@ -27,30 +27,31 @@ public class CacheHandler<T> implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Storage storage;
-        if (method.isAnnotationPresent(Cache.class)) {
-            cacheProperties = getCachePropertiesFromAnnotation(method);
-            argsForCache = getParamsForCache(args);
-            //получения хранилища для метода, либо создание нового в соответствии с параметрами аннотации
-            if (storageMap.containsKey(method)) {
-                storage = storageMap.get(method);
-            } else {
-                storageMap.put(method, setStorage(method));
-                storage = storageMap.get(method);
-            }
 
-            //либо получение значения из кэша, либо вычисление и кэширование
-            if (storage.containsCachedValue(argsForCache)) {
-                System.out.println(Thread.currentThread().getName() + " Getting value from cache");
-                return storage.getCachedValue(argsForCache);
-            } else {
-                Object result = method.invoke(delegate, args);
-                storage.cachValue(argsForCache,  trimResult(result));
-                return result;
+            Storage storage;
+            if (method.isAnnotationPresent(Cache.class)) {
+                cacheProperties = getCachePropertiesFromAnnotation(method);
+                argsForCache = getParamsForCache(args);
+                //получения хранилища для метода, либо создание нового в соответствии с параметрами аннотации
+                synchronized (storageMap) {
+                    if (!storageMap.containsKey(method)) {
+                        storageMap.put(method, setStorage(method));
+                    }
+                    storage = storageMap.get(method);
+                }
+                    //либо получение значения из кэша, либо вычисление и кэширование
+                synchronized (storage) {
+                    if (storage.containsCachedValue(argsForCache)) {
+                        System.out.println(Thread.currentThread().getName() + " Getting value from cache");
+                    } else {
+                        storage.cachValue(argsForCache, trimResult(method.invoke(delegate, args)));
+                    }
+                    return storage.getCachedValue(argsForCache);
+                }
             }
-        }
-        //если метод не аннотирован кэшем, то просто вычисление значения
-        return method.invoke(delegate, args);
+            //если метод не аннотирован кэшем, то просто вычисление значения
+            return method.invoke(delegate, args);
+
     }
 
     /**
